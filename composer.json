@@ -1,0 +1,45 @@
+{
+    "name": "twsihan/yii-admin",
+    "description": "Yii2 Framework AdminLTE Theme And RBAC Auth Manager",
+    "keywords": [
+        "yii2",
+        "extension",
+        "theme",
+        "admin",
+        "auth",
+        "rbac"
+    ],
+    "type": "yii2-extension",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/twsihan/yii2-admin/issues",
+        "source": "https://github.com/twsihan/yii2-admin"
+    },
+    "authors": [
+        {
+            "name": "Twsi Han",
+            "email": "twsihan@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "yiisoft/yii2": "~2.0.14",
+        "almasaeed2010/adminlte": "~2.4.10",
+        "rmrevin/yii2-fontawesome": "~2.9",
+        "twsihan/yii-extras": "~0.0.1",
+        "kartik-v/yii2-dialog": "~1.0.5",
+        "kartik-v/yii2-field-range": "~1.3.5",
+        "kartik-v/yii2-date-range": "~1.7.1",
+        "kartik-v/yii2-widget-select2": "~2.1.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "twsihan\\admin\\": "src"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.0.x-dev"
+        }
+    }
+}
