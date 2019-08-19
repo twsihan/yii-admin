@@ -167,25 +167,6 @@ class Access extends ActionFilter
 
     private function allowAction($action)
     {
-        $uniqueId = $action->getUniqueId();
-        if ($uniqueId === Yii::$app->getErrorHandler()->errorAction) {
-            return true;
-        }
-
-        /* @var User $user */
-        $user = $this->getUser();
-        if ($user->getIsGuest()) {
-            $loginUrl = null;
-            if (is_array($user->loginUrl) && isset($user->loginUrl[0])) {
-                $loginUrl = $user->loginUrl[0];
-            } else if (is_string($user->loginUrl)) {
-                $loginUrl = $user->loginUrl;
-            }
-            if (!is_null($loginUrl) && trim($loginUrl, '/') === $uniqueId) {
-                return true;
-            }
-        }
-
         $actionId = $this->getActionId($action);
 
         $allow = false;

@@ -22,12 +22,11 @@ php yii migrate --migrationPath=@twsihan/admin/migrations
     ],
 ],
 'as access' => [
-    'class' => 'twsihan\admin\components\filters\Access',
+    'class' => 'twsihan\admin\components\filters\AccessControl',
     'allowAction' => [
         'admin/admin/profile',
         'admin/default/*',
         'site/*',
-        '*',
     ],
 ],
 'components' => [

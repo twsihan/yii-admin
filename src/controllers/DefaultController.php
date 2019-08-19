@@ -2,7 +2,7 @@
 
 namespace twsihan\admin\controllers;
 
-use twsihan\admin\components\filters\Access;
+use twsihan\admin\components\filters\AccessControl;
 use twsihan\admin\components\web\Controller;
 use twsihan\admin\models\logic\AdminLogic;
 use twsihan\admin\components\helpers\ParamsHelper;
@@ -25,10 +25,11 @@ class DefaultController extends Controller
     {
         return [
             'access' => [
-                'class' => Access::class,
+                'class' => AccessControl::class,
+                'allowAction' => ['login'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'index'],
+                        'actions' => ['index', 'logout', 'error'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
