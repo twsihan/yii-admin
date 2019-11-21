@@ -4,7 +4,6 @@ namespace twsihan\admin\components\helpers;
 
 use Yii;
 use yii\base\Module;
-use yii\db\ActiveRecord;
 use yii\web\User;
 use twsihan\admin\Module as AdminModule;
 use twsihan\yii\helpers\ArrayHelper;
@@ -64,29 +63,5 @@ class ParamsHelper
         $user = static::getUser();
 
         return $name ? ArrayHelper::getValue($user->identity, $name) : $user->getIdentity();
-    }
-
-    /**
-     * profileUrl
-     * @param null $default
-     * @return mixed
-     */
-    public static function profileUrl($default = null)
-    {
-        $default = $default ? $default : ('/' . static::adminRulePrefix() . '/admin/profile');
-
-        return ArrayHelper::getValue(Yii::$app->params, static::ADMIN_PREFIX . 'profileUrl', $default);
-    }
-
-    /**
-     * logoutUrl
-     * @param null $default
-     * @return mixed
-     */
-    public static function logoutUrl($default = null)
-    {
-        $default = $default ? $default : ('/' . static::adminRulePrefix() . '/default/logout');
-
-        return ArrayHelper::getValue(Yii::$app->params, static::ADMIN_PREFIX . 'logoutUrl', $default);
     }
 }

@@ -2,13 +2,11 @@
 
 namespace twsihan\admin\controllers;
 
-use twsihan\admin\components\web\Controller;
+use twsihan\admin\components\rest\ActiveController;
 use Yii;
 use yii\base\Model;
-use yii\bootstrap\ActiveForm;
 use yii\data\ActiveDataProvider;
 use yii\db\Query;
-use yii\web\Response;
 
 /**
  * Class RoleController
@@ -16,7 +14,7 @@ use yii\web\Response;
  * @package twsihan\admin\controllers
  * @author twsihan <twsihan@gmail.com>
  */
-class RuleController extends Controller
+class RuleController extends ActiveController
 {
 
 
@@ -26,20 +24,10 @@ class RuleController extends Controller
     public function actionIndex()
     {
         $searchModel = new Model();
-        $searchModel->load(Yii::$app->request->get());
-
-        if (Yii::$app->request->isAjax) {
-            Yii::$app->response->format = Response::FORMAT_JSON;
-            return ActiveForm::validate($searchModel);
-        }
+        $searchModel->load(Yii::$app->request->get(), '');
 
         $auth = Yii::$app->getAuthManager();
         $query = (new Query())->from("{$auth->ruleTable}");
-        $dataProvider = new ActiveDataProvider(['query' => $query]);
-
-        return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-        ]);
+        return new ActiveDataProvider(['query' => $query]);
     }
 }

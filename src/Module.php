@@ -13,7 +13,6 @@ use yii\web\User;
  */
 class Module extends \yii\base\Module
 {
-    public $layout = '@twsihan/admin/views/layouts/main';
     /**
      * @var User|string 指定用户
      */

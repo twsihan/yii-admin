@@ -2,8 +2,7 @@
 
 namespace twsihan\admin\controllers;
 
-use twsihan\admin\components\filters\AccessControl;
-use twsihan\admin\components\web\Controller;
+use twsihan\admin\components\rest\ActiveController;
 use twsihan\admin\models\logic\AdminLogic;
 use twsihan\admin\components\helpers\ParamsHelper;
 use Yii;
@@ -14,29 +13,9 @@ use Yii;
  * @package twsihan\admin\controllers
  * @author twsihan <twsihan@gmail.com>
  */
-class DefaultController extends Controller
+class DefaultController extends ActiveController
 {
 
-
-    /**
-     * {@inheritdoc}
-     */
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'allowAction' => ['login'],
-                'rules' => [
-                    [
-                        'actions' => ['index', 'logout', 'error'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
-        ];
-    }
 
     /**
      * {@inheritdoc}
