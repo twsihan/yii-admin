@@ -74,10 +74,10 @@ class Serializer extends \yii\rest\Serializer
     protected function serializePagination($pagination)
     {
         return [
-            'total_count' => $pagination->totalCount,
-            'page_count' => $pagination->getPageCount(),
-            'current_page' => $pagination->getPage() + 1,
-            'per_page' => $pagination->getPageSize(),
+            'totalCount' => $pagination->totalCount,
+            'pageCount' => $pagination->getPageCount(),
+            'currentPage' => $pagination->getPage() + 1,
+            'perPage' => $pagination->getPageSize(),
         ];
     }
 }

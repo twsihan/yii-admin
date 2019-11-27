@@ -1,19 +1,19 @@
 <?php
 
-namespace twsihan\admin\models\form;
+namespace twsihan\admin\models\entity;
 
+use twsihan\admin\components\base\EntityModel;
 use twsihan\admin\components\web\UploadedFile;
-use twsihan\admin\models\mysql\Admin;
 use Yii;
-use yii\base\Model;
+use yii\web\IdentityInterface;
 
 /**
- * Class AdminForm
+ * Class UserEntity
  *
  * @package twsihan\admin\models\form
  * @author twsihan <twsihan@gmail.com>
  */
-class AdminForm extends Model
+class UserEntity extends EntityModel
 {
     public $username;
     public $password;
@@ -27,13 +27,13 @@ class AdminForm extends Model
     public $rememberMe = true;
 
     /**
-     * @var Admin
+     * @var IdentityInterface
      */
     protected $_user;
     /**
      * @var UploadedFile Model upload files
      */
-    private $_uploadModel;
+    protected $_uploadModel;
 
 
     /**
@@ -88,15 +88,6 @@ class AdminForm extends Model
             ],
             ['cPassword', 'confirmPassword', 'on' => ['password']],
             ['password', 'rulesPassword', 'on' => ['login']],
-            [
-                [
-                    'username',
-                    'email',
-                    'roleName',
-                ],
-                'safe',
-                'on' => ['search'],
-            ]
         ];
     }
 

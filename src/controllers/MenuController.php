@@ -2,11 +2,13 @@
 
 namespace twsihan\admin\controllers;
 
+use twsihan\admin\components\helpers\ParamsHelper;
 use twsihan\admin\components\rest\ActiveController;
-use twsihan\admin\models\mysql\Menu;
-use twsihan\admin\models\logic\MenuLogic;
+use twsihan\admin\models\form\MenuForm;
+use twsihan\admin\models\form\MenuIndex;
 use Yii;
-use yii\web\HttpException;
+use yii\web\ServerErrorHttpException;
+use yii\web\UnprocessableEntityHttpException;
 
 /**
  * Class MenuController
@@ -16,44 +18,58 @@ use yii\web\HttpException;
  */
 class MenuController extends ActiveController
 {
+    public $formModel = MenuForm::class;
+    public $indexModel = MenuIndex::class;
 
 
     public function actionCreate()
     {
-        $model = new MenuLogic(['scenario' => 'create']);
-        if ($model->load(Yii::$app->request->post(), '') && $model->validate()) {
-            if (!$model->create()) {
-                throw new HttpException(500, '创建失败');
-            }
-        } else {
-            return $model;
+        /* @var MenuForm $model */
+        $model = Yii::createObject($this->formModel);
+        $model->load(Yii::$app->request->post(), '');
+        if ($model->handle(0)) {
+            return Yii::$app->response->setStatusCode(201);
+        } elseif (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
         }
+        return $model;
     }
 
     public function actionDelete($id)
     {
-        if ($id) {
-            Menu::findById($id)->delete();
+        if (empty($id)) {
+            throw new UnprocessableEntityHttpException('缺少参数');
         }
+        $class = ParamsHelper::getMenuClass();
+        $model = $class::findOne(['id' => $id]);
+        if ($model->delete()) {
+            return Yii::$app->response->setStatusCode(204);
+        }
+        throw new ServerErrorHttpException('Failed to delete the object for unknown reason.');
     }
 
     public function actionUpdate($id)
     {
-        $model = new MenuLogic(['scenario' => 'update']);
-
-        if ($model->load(Yii::$app->request->post(), '') && $model->validate()) {
-            if (!$model->update($id)) {
-                throw new HttpException(500, '更新失败');
-            }
-        } else {
-            return $model;
+        /* @var MenuForm $model */
+        $model = Yii::createObject($this->formModel);
+        $model->load(Yii::$app->request->post(), '');
+        if ($model->handle($id)) {
+            return;
+        } else if (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to update the object for unknown reason.');
         }
+        return $model;
     }
 
     public function actionIndex()
     {
-        $model = new MenuLogic(['scenario' => 'search']);
+        /* @var MenuIndex $model */
+        $model = Yii::createObject($this->indexModel);
         $model->load(Yii::$app->request->get(), '');
-        return $model->search();
+        $this->serializer = [
+            'class' => $this->serializer,
+            'collectionEnvelope' => 'items',
+        ];
+        return $model->handle();
     }
 }

@@ -2,9 +2,12 @@
 
 namespace twsihan\admin\models\form;
 
+use twsihan\admin\components\helpers\ParamsHelper;
+use twsihan\admin\components\rbac\DbManager;
 use twsihan\admin\components\rbac\Item;
+use twsihan\admin\models\entity\RoleEntity;
 use Yii;
-use yii\base\Model;
+use yii\db\Exception;
 use yii\db\Query;
 
 /**
@@ -13,12 +16,8 @@ use yii\db\Query;
  * @package twsihan\admin\models\form
  * @author twsihan <twsihan@gmail.com>
  */
-class RoleForm extends Model
+class RoleForm extends RoleEntity
 {
-    public $name;
-    public $description;
-    public $items;
-    public $rules;
 
 
     /**
@@ -30,33 +29,59 @@ class RoleForm extends Model
             [
                 ['name', 'description', 'rules'],
                 'required',
-                'on' => ['save', 'update'],
-                'message' => '*必填',
-            ],
-            [
-                'name',
-                function ($attribute) {
-                    $exists = (new Query())->from(Yii::$app->getAuthManager()->itemTable)
-                        ->where('name = :name and type = :type', [':name' => $this->$attribute, ':type' => Item::TYPE_ROLE])
-                        ->exists();
-                    if ($exists) {
-                        $this->addError($attribute, '属性已存在，请重新输入！~');
-                    }
-                },
-                'on' => ['save'],
             ],
         ];
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function attributeLabels()
+    public function handle($id)
     {
-        return [
-            'name' => '角色名称',
-            'description' => '角色简介',
-            'rules' => '角色权限',
-        ];
+        if ($this->validate()) {
+            /* @var DbManager $authManager */
+            $authManager = ParamsHelper::getAuthManager();
+            $transaction = Yii::$app->db->beginTransaction();
+            try {
+                $role = $authManager->createRole($this->name);
+                $role->description = $this->description;
+                if ($id) {
+                    $authManager->update($id, $role);
+                    $authManager->removeChildren($role);
+                } else {
+                    $exists = (new Query())->from($authManager->itemTable)
+                        ->where('name = :name and type = :type', [':name' => $this->name, ':type' => Item::TYPE_ROLE])
+                        ->exists();
+                    if ($exists) {
+                        $this->addError('name', '属性已存在，请重新输入！~');
+                        $transaction->rollBack();
+                        return false;
+                    }
+                    $authManager->add($role);
+                }
+
+                $rules = $this->rules;
+                $parent = isset($rules['parent']) ? $rules['parent'] : [];
+                $child = isset($rules['child']) ? $rules['child'] : [];
+                foreach ($parent as $rule) {
+                    $item = $authManager->createPermission($rule);
+                    $authManager->addChild($role, $item);
+                }
+                foreach ($child as $index => $value) {
+                    if (!array_key_exists($index, $parent)) {
+                        foreach ($value as $rule) {
+                            $item = $authManager->createPermission($rule);
+                            $authManager->addChild($role, $item);
+                        }
+                    }
+                }
+
+                $transaction->commit();
+
+                return true;
+            } catch (Exception $e) {
+                Yii::error($e, __FUNCTION__);
+
+                $transaction->rollBack();
+            }
+        }
+        return false;
     }
 }

@@ -4,10 +4,13 @@ namespace twsihan\admin\controllers;
 
 use twsihan\admin\components\helpers\ParamsHelper;
 use twsihan\admin\components\rest\ActiveController;
-use twsihan\admin\models\mysql\Admin;
-use twsihan\admin\models\logic\AdminLogic;
+use twsihan\admin\models\form\UserForm;
+use twsihan\admin\models\form\UserIndex;
+use twsihan\admin\models\form\UserPassword;
 use Yii;
-use yii\web\HttpException;
+use yii\db\ActiveRecord;
+use yii\web\ServerErrorHttpException;
+use yii\web\UnprocessableEntityHttpException;
 
 /**
  * Class AdminController
@@ -18,97 +21,95 @@ use yii\web\HttpException;
 class AdminController extends ActiveController
 {
     /**
-     * @var $model
+     * @var string
      */
     public $uploadModel = 'twsihan\admin\components\web\UploadedFile';
+    public $formModel = UserForm::class;
+    public $indexModel = UserIndex::class;
+    public $passwordModel = UserPassword::class;
 
-
-    public function actionIndex()
-    {
-        $model = new AdminLogic(['scenario' => 'search']);
-        $model->load(Yii::$app->request->get(), '');
-        return $model->search();
-    }
 
     public function actionCreate()
     {
-        /* @var AdminLogic $model */
-        $model = new AdminLogic(['scenario' => 'create']);
-        if ($model->load(Yii::$app->request->post(), '') && $model->validate()) {
-            $model->setUploadModel($this->uploadModel);
-            if (!$model->create()) {
-                throw new HttpException(500, '创建失败');
-            }
+        /* @var UserForm $model */
+        $model = Yii::createObject($this->formModel);
+        $model->load(Yii::$app->request->post(), '');
+        $model->setUploadModel($this->uploadModel);
+        if ($model->handle(0)) {
+            return Yii::$app->response->setStatusCode(201);
+        } elseif (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
         }
         return $model;
     }
 
     public function actionDelete($id)
     {
-        if (empty($id) || !($arrIds = explode(',', $id))) {
-            throw new HttpException(422, '缺少参数');
+        if (empty($id)) {
+            throw new UnprocessableEntityHttpException('缺少参数');
         }
-
-        /* @var Admin $model */
-        $admins = Admin::findAll(['id' => $arrIds]);
-        if (empty($admins)) {
-            return $this->redirect('index');
+        $webUser = ParamsHelper::getUser();
+        /* @var ActiveRecord $class */
+        $class = $webUser->identityClass;
+        $model = $class::findOne(['id' => $id]);
+        if ($model->delete()) {
+            return Yii::$app->response->setStatusCode(204);
         }
-
-        foreach ($admins as $admin) {
-            $admin->delete();
-        }
+        throw new ServerErrorHttpException('Failed to delete the object for unknown reason.');
     }
 
     public function actionUpdate($id)
     {
-        $model = [];
-        if ($id) {
-            /* @var AdminLogic $model */
-            $model = new AdminLogic(['scenario' => 'update']);
-            if ($model->load(Yii::$app->request->post(), '') && $model->validate()) {
-                $model->setUploadModel($this->uploadModel);
-                if (!$model->update($id)) {
-                    throw new HttpException(500, '更新失败');
-                }
-            }
-            $model->findByUserId($id);
+        /* @var UserForm $model */
+        $model = Yii::createObject($this->formModel);
+        $model->load(Yii::$app->request->post(), '');
+        $model->setUploadModel($this->uploadModel);
+        if ($model->handle($id)) {
+            return;
+        } else if (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to update the object for unknown reason.');
         }
         return $model;
     }
 
-    public function actionProfile()
+    public function actionIndex()
     {
-        /* @var AdminLogic $profileModel */
-        $profileModel = new AdminLogic(['scenario' => 'profile']);
-        /* @var AdminLogic $passwordModel */
-        $passwordModel = new AdminLogic(['scenario' => 'password']);
-
-        $userId = ParamsHelper::getUser()->getId();
-        if (Yii::$app->request->isPost) {
-            $type = Yii::$app->request->post('type', 'profile');
-            if ($type === 'password') {
-                if ($passwordModel->load(Yii::$app->request->post(), '') && $passwordModel->password($userId)) {
-                    return $passwordModel;
-                } else {
-                    throw new HttpException(500, '更新失败');
-                }
-            } else {
-                $profileModel->setUploadModel($this->uploadModel);
-                if ($profileModel->load(Yii::$app->request->post(), '') && $profileModel->update($userId)) {
-                    return $profileModel;
-                } else {
-                    throw new HttpException(500, '更新失败');
-                }
-            }
-        }
-
-        $profileModel->findByUserId($userId);
-        $profileModel->setUploadModel($this->uploadModel);
-
-        return [
-            'profileModel' => $profileModel,
-            'passwordModel' => $passwordModel,
+        /* @var UserIndex $model */
+        $model = Yii::createObject($this->indexModel);
+        $model->load(Yii::$app->request->get(), '');
+        $this->serializer = [
+            'class' => $this->serializer,
+            'collectionEnvelope' => 'items',
         ];
+        return $model->handle();
+    }
+
+    public function actionEditProfile()
+    {
+        /* @var UserForm $model */
+        $model = Yii::createObject($this->formModel);
+        $model->load(Yii::$app->request->post(), '');
+        $model->setUploadModel($this->uploadModel);
+        $webUser = ParamsHelper::getUser();
+        if ($model->handle($webUser->getId())) {
+            return;
+        } else if (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to update the object for unknown reason.');
+        }
+        return $model;
+    }
+
+    public function actionResetPassword()
+    {
+        /* @var UserPassword $model */
+        $model = Yii::createObject($this->passwordModel);
+        $model->load(Yii::$app->request->post(), '');
+        $webUser = ParamsHelper::getUser();
+        if ($model->handle($webUser->getId())) {
+            return;
+        } else if (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to update the object for unknown reason.');
+        }
+        return $model;
     }
 }

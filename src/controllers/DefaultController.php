@@ -3,9 +3,10 @@
 namespace twsihan\admin\controllers;
 
 use twsihan\admin\components\rest\ActiveController;
-use twsihan\admin\models\logic\AdminLogic;
+use twsihan\admin\models\form\UserLogin;
 use twsihan\admin\components\helpers\ParamsHelper;
 use Yii;
+use yii\web\ServerErrorHttpException;
 
 /**
  * Class DefaultController
@@ -29,27 +30,16 @@ class DefaultController extends ActiveController
         ];
     }
 
-    public function actionIndex()
-    {
-        return $this->render('index');
-    }
-
     public function actionLogin()
     {
-        $user = ParamsHelper::getUser();
-
-        if (!$user->isGuest) {
-            return $this->goHome();
+        $model = new UserLogin();
+        $model->load(Yii::$app->request->post(), '');
+        if (($result = $model->login()) !== false) {
+            return $result;
+        } else if (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
         }
-
-        $model = new AdminLogic(['scenario' => 'login']);
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        }
-
-        return $this->render('login', [
-            'model' => $model,
-        ]);
+        return $model;
     }
 
     public function actionLogout()
@@ -57,7 +47,5 @@ class DefaultController extends ActiveController
         $user = ParamsHelper::getUser();
 
         $user->logout();
-
-        return $this->goHome();
     }
 }

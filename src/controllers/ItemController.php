@@ -4,11 +4,15 @@ namespace twsihan\admin\controllers;
 
 use twsihan\admin\components\rbac\Item;
 use twsihan\admin\components\rest\ActiveController;
-use twsihan\admin\models\logic\ItemLogic;
+use twsihan\admin\models\form\ItemDelete;
+use twsihan\admin\models\form\ItemForm;
+use twsihan\admin\models\form\ItemIndex;
+use twsihan\admin\models\form\ItemView;
+use twsihan\yii\helpers\ArrayHelper;
 use Yii;
-use yii\data\ActiveDataProvider;
 use yii\db\Query;
-use yii\web\HttpException;
+use yii\web\ServerErrorHttpException;
+use yii\web\UnprocessableEntityHttpException;
 
 /**
  * Class ItemController
@@ -18,56 +22,80 @@ use yii\web\HttpException;
  */
 class ItemController extends ActiveController
 {
+    public $formModel = ItemForm::class;
+    public $deleteModel = ItemDelete::class;
+    public $indexModel = ItemIndex::class;
+    public $viewModel = ItemView::class;
 
+
+    public function actionParent()
+    {
+        $auth = Yii::$app->getAuthManager();
+        $result = (new Query())->from($auth->itemTable)
+            ->where(['type' => Item::TYPE_PERMISSION_GROUP])
+            ->orderBy(['created_at' => SORT_DESC])
+            ->all();
+        return ['parentItems' => ArrayHelper::map($result, 'name', 'description')];
+    }
 
     public function actionCreate()
     {
-        $model = new ItemLogic(['scenario' => 'create']);
+        /* @var ItemForm $model */
+        $model = Yii::createObject($this->formModel);
         $model->load(Yii::$app->request->post(), '');
-        if ($model->validate()) {
-            if (!$model->create()) {
-                throw new HttpException(500, '更新失败');
-            }
+        if ($model->handle(0)) {
+            return Yii::$app->response->setStatusCode(201);
+        } elseif (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
         }
         return $model;
     }
 
-    public function actionDelete($name)
+    public function actionDelete($id)
     {
-        if ($name) {
-            if (!(new ItemLogic())->delete($name)) {
-                throw new HttpException(500, '更新失败');
-            }
+        if (empty($id)) {
+            throw new UnprocessableEntityHttpException('缺少参数');
         }
-        return $this->redirect('index');
+        /* @var ItemDelete $model */
+        $model = Yii::createObject($this->deleteModel);
+        if ($model->handle($id)) {
+            return Yii::$app->response->setStatusCode(204);
+        }
+        throw new ServerErrorHttpException('Failed to delete the object for unknown reason.');
     }
 
-    public function actionUpdate($name)
+    public function actionUpdate($id)
     {
-        $model = new ItemLogic(['scenario' => 'update']);
-        if ($model->load(Yii::$app->request->post(), '') && $model->validate()) {
-            if (!$model->update($name)) {
-                throw new HttpException(500, '更新失败');
-            }
-        } else {
-            return $model;
+        /* @var ItemForm $model */
+        $model = Yii::createObject($this->formModel);
+        $model->load(Yii::$app->request->post(), '');
+        if ($model->handle($id)) {
+            return;
+        } else if (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to update the object for unknown reason.');
         }
+        return $model;
     }
 
     public function actionIndex()
     {
-        $searchModel = new ItemLogic(['scenario' => 'search']);
-        $searchModel->load(Yii::$app->request->get(), '');
+        /* @var ItemIndex $model */
+        $model = Yii::createObject($this->indexModel);
+        $model->load(Yii::$app->request->get(), '');
+        $this->serializer = [
+            'class' => $this->serializer,
+            'collectionEnvelope' => 'items',
+        ];
+        return $model->handle();
+    }
 
-        $type = [Item::TYPE_PERMISSION, Item::TYPE_PERMISSION_GROUP];
-        if ($searchModel->validate()) {
-            if ($searchModel->type) {
-                $type = $searchModel->type;
-            }
+    public function actionView($id)
+    {
+        if (empty($id)) {
+            throw new UnprocessableEntityHttpException('缺少参数');
         }
-
-        $auth = Yii::$app->getAuthManager();
-        $query = (new Query())->from("{$auth->itemTable}")->where(['type' => $type]);
-        return new ActiveDataProvider(['query' => $query]);
+        /* @var ItemView $model */
+        $model = Yii::createObject($this->viewModel);
+        return $model->handle($id);
     }
 }

@@ -2,9 +2,10 @@
 
 namespace twsihan\admin\models\form;
 
-use twsihan\admin\models\logic\ItemLogic;
+use twsihan\admin\components\helpers\ParamsHelper;
+use twsihan\admin\components\rbac\DbManager;
+use twsihan\admin\models\entity\ItemEntity;
 use Yii;
-use yii\base\Model;
 use yii\db\Query;
 
 /**
@@ -13,7 +14,7 @@ use yii\db\Query;
  * @package twsihan\admin\models\form
  * @author twsihan <twsihan@gmail.com>
  */
-class ItemForm extends Model
+class ItemForm extends ItemEntity
 {
     public $type;
     public $parentName;
@@ -26,56 +27,77 @@ class ItemForm extends Model
      */
     public function rules()
     {
+        $authManager = ParamsHelper::getAuthManager();
         return [
             [
                 'parentName',
-                function ($attribute) {
-                    $exists = (new Query())->from(Yii::$app->getAuthManager()->itemTable)
+                function ($attribute) use ($authManager) {
+                    $exists = (new Query())->from($authManager->itemTable)
                         ->where('name = :name and type = :type', [':name' => $this->$attribute, ':type' => 3])
                         ->exists();
                     if (!$exists) {
                         $this->addError($attribute, '属性不存在，请重新输入！~');
                     }
                 },
-                'on' => ['create', 'update'],
             ],
             [
                 ['name', 'description'],
                 'required',
-                'on' => ['create', 'update'],
-                'message' => '*必填',
             ],
             [
                 'name',
-                function ($attribute) {
-                    $exists = (new Query())->from(Yii::$app->getAuthManager()->itemTable)
+                function ($attribute) use ($authManager) {
+                    $exists = (new Query())->from($authManager->itemTable)
                         ->where('name = :name and type = :type', [':name' => $this->$attribute, ':type' => 2])
                         ->exists();
                     if ($exists) {
                         $this->addError($attribute, '属性已存在，请重新输入！~');
                     }
                 },
-                'on' => ['create'],
-            ],
-            [
-                'type',
-                'in',
-                'range' => array_keys(ItemLogic::typeMap()),
-                'on' => ['search'],
             ],
         ];
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function attributeLabels()
+    public function handle($id)
     {
-        return [
-            'type' => '类型',
-            'parentName' => '父级名称',
-            'name' => '模块名称',
-            'description' => '模块简介',
-        ];
+        /* @var DbManager $authManager */
+        $authManager = ParamsHelper::getAuthManager();
+        if ($this->validate()) {
+            if ($id) {
+                if ($this->parentName) {
+                    $parentName = null;
+                    $itemGroup = static::itemGroup();
+                    foreach ($itemGroup as $group => $items) {
+                        foreach ($items['items'] as $item) {
+                            if ($item['name'] == $id) {
+                                $parentName = $group;
+                                break;
+                            }
+                        }
+                    }
+                    if ($parentName !== null) { // 如果之前有组移除
+                        $authManager->removeChild($authManager->createPermissionGroup($parentName), $authManager->getPermission($id));
+                    }
+                    $item = $authManager->createPermission($this->name);
+                    $item->description = $this->description;
+                    return $authManager->update($id, $item) && $authManager->addChild($authManager->createPermissionGroup($this->parentName), $item);
+                } else {
+                    $item = $authManager->createPermissionGroup($this->name);
+                    $item->description = $this->description;
+                    return $authManager->update($id, $item);
+                }
+            } else {
+                if ($this->parentName) {
+                    $item = $authManager->createPermission($this->name);
+                    $item->description = $this->description;
+                    return $authManager->add($item) && $authManager->addChild($authManager->createPermissionGroup($this->parentName), $item);
+                } else {
+                    $item = $authManager->createPermissionGroup($this->name);
+                    $item->description = $this->description;
+                    return $authManager->add($item);
+                }
+            }
+        }
+        return false;
     }
 }

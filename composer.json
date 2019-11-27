@@ -25,8 +25,7 @@
     ],
     "require": {
         "php": ">=7.1.0",
-        "yiisoft/yii2": "~2.0.14",
-        "twsihan/yii-extras": "~0.0.1"
+        "yiisoft/yii2": "~2.0.14"
     },
     "autoload": {
         "psr-4": {
@@ -35,7 +34,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "0.0.x-dev"
+            "dev-master": "2.0.x-dev"
         }
     }
 }

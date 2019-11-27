@@ -2,14 +2,17 @@
 
 namespace twsihan\admin\controllers;
 
+use twsihan\admin\components\helpers\ParamsHelper;
+use twsihan\admin\components\rbac\DbManager;
+use twsihan\admin\components\rbac\Item;
 use twsihan\admin\components\rest\ActiveController;
-use twsihan\admin\models\mysql\AuthItem;
-use twsihan\admin\models\logic\AuthLogic;
-use twsihan\admin\models\logic\RoleLogic;
+use twsihan\admin\models\form\RoleForm;
+use twsihan\admin\models\form\RoleIndex;
+use twsihan\yii\helpers\ArrayHelper;
 use Yii;
-use yii\base\Model;
-use yii\data\ActiveDataProvider;
-use yii\web\HttpException;
+use yii\db\Query;
+use yii\web\ServerErrorHttpException;
+use yii\web\UnprocessableEntityHttpException;
 
 /**
  * Class RoleController
@@ -19,53 +22,80 @@ use yii\web\HttpException;
  */
 class RoleController extends ActiveController
 {
+    public $formModel = RoleForm::class;
+    public $indexModel = RoleIndex::class;
 
 
     public function actionCreate()
     {
-        $model = new RoleLogic(['scenario' => 'save']);
-        if ($model->load(Yii::$app->request->post(), '')) {
-            if (!$model->save()) {
-                throw new HttpException(500, '创建失败');
-            }
-        } else {
-            return $model;
+        /* @var RoleForm $model */
+        $model = Yii::createObject($this->formModel);
+        $model->load(Yii::$app->request->post(), '');
+        if ($model->handle(0)) {
+            return Yii::$app->response->setStatusCode(201);
+        } elseif (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
         }
+        return $model;
     }
 
     public function actionDelete($id)
     {
-        if ($id) {
-            if (AuthLogic::isRole($id) > 0) {
-                throw new HttpException(500, "无法删除，{$id} 正在使用！~");
-            } else {
-                $auth = Yii::$app->getAuthManager();
-                $item = $auth->createPermission($id);
-                $auth->remove($item);
-            }
+        if (empty($id)) {
+            throw new UnprocessableEntityHttpException('缺少参数');
         }
+        /* @var DbManager $authManager */
+        $authManager = ParamsHelper::getAuthManager();
+        $count = (new Query())->from($authManager->assignmentTable)
+            ->where('item_name = :name', [':name' => $id])
+            ->count('item_name');
+        if ($count) {
+            throw new ServerErrorHttpException("无法删除，{$id} 正在使用");
+        }
+        $item = $authManager->createPermission($id);
+        if ($authManager->remove($item)) {
+            return Yii::$app->response->setStatusCode(204);
+        }
+
+        throw new ServerErrorHttpException('Failed to delete the object for unknown reason.');
     }
 
     public function actionUpdate($id)
     {
-        if (!$id) {
-            throw new HttpException(422, '缺少参数');
-        }
-
-        $model = new RoleLogic(['scenario' => 'update']);
+        /* @var RoleForm $model */
+        $model = Yii::createObject($this->formModel);
         $model->load(Yii::$app->request->post(), '');
-        if (!$model->update($id)) {
-            throw new HttpException(500, '更新失败');
-        } else {
-            return $model;
+        if ($model->handle($id)) {
+            return;
+        } else if (!$model->hasErrors()) {
+            throw new ServerErrorHttpException('Failed to update the object for unknown reason.');
         }
+        return $model;
     }
 
     public function actionIndex()
     {
-        $searchModel = new Model();
-        $searchModel->load(Yii::$app->request->get(), '');
-        $query = AuthItem::find()->where('type = 1');
-        return new ActiveDataProvider(['query' => $query]);
+        /* @var RoleIndex $model */
+        $model = Yii::createObject($this->indexModel);
+        $model->load(Yii::$app->request->get(), '');
+        $this->serializer = [
+            'class' => $this->serializer,
+            'collectionEnvelope' => 'items',
+        ];
+        return $model->handle();
+    }
+
+    public function actionAuth()
+    {
+        /* @var DbManager $authManager */
+        $authManager = ParamsHelper::getAuthManager();
+        $result = (new Query())->from($authManager->itemTable)
+            ->where(['type' => [Item::TYPE_ROLE]])
+            ->orderBy(['created_at' => SORT_DESC])
+            ->all();
+
+        $list = ArrayHelper::map($result, 'name', 'description');
+
+        return $list;
     }
 }

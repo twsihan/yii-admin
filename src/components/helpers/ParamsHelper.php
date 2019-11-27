@@ -2,10 +2,13 @@
 
 namespace twsihan\admin\components\helpers;
 
+use twsihan\admin\components\rbac\DbManager;
+use twsihan\admin\models\mysql\Menu;
 use Yii;
-use yii\base\Module;
+use yii\base\InvalidConfigException;
+use yii\db\ActiveRecord;
 use yii\web\User;
-use twsihan\admin\Module as AdminModule;
+use twsihan\admin\Module;
 use twsihan\yii\helpers\ArrayHelper;
 
 /**
@@ -16,52 +19,92 @@ use twsihan\yii\helpers\ArrayHelper;
  */
 class ParamsHelper
 {
-    const ADMIN_PREFIX = 'twsihan.admin.';
 
 
     /**
-     * adminRulePrefix
+     * getParam
+     * @param $key
+     * @param $default
      * @return string
      */
-    public static function adminRulePrefix()
+    public static function getParam($key, $default)
     {
-        return trim(ArrayHelper::getValue(Yii::$app->params, static::ADMIN_PREFIX . 'prefix', 'admin'), '/');
+        return trim(ArrayHelper::getValue(Yii::$app->params, 'twsihan.admin.' . $key, $default), '/');
     }
 
     /**
-     * adminModule
-     * @return Module|AdminModule|null
+     * modulePrefix
+     * @return string
      */
-    public static function adminModule()
+    public static function module()
     {
-        $id = static::adminRulePrefix();
+        return static::getParam('module', 'admin');
+    }
 
-        return Yii::$app->getModule($id);
+    /**
+     * getModule
+     * @return Module
+     */
+    public static function getModule()
+    {
+        $id = static::module();
+        /** @var Module $module */
+        $module = Yii::$app->getModule($id);
+        return $module;
     }
 
     /**
      * getUser
-     * @return string|User
+     * @return User
+     * @throws InvalidConfigException
      */
     public static function getUser()
     {
-        /* @var AdminModule $module */
-        $module = static::adminModule();
+        $id = static::getParam('user', 'user');
+        /** @var User $user */
+        $user = Yii::$app->get($id);
+        return $user;
+    }
 
-        return $module->getUser();
+    public static function accessTokenParam($default = 'access_token')
+    {
+        return static::getParam('accessTokenParam', $default);
+    }
+
+    public static function accessTokenExpire($default = 0)
+    {
+        return static::getParam('accessTokenExpire', $default);
     }
 
     /**
-     * getIdentity
-     * @param null $name
-     * @return mixed|\yii\web\IdentityInterface|null
-     * @throws \Throwable
+     * getAuthManager
+     * @return DbManager
+     * @throws InvalidConfigException
      */
-    public static function getIdentity($name = null)
+    public static function getAuthManager()
     {
-        /* @var User $user */
-        $user = static::getUser();
+        $id = static::getParam('authManager', 'authManager');
+        /** @var DbManager $authManager */
+        $authManager = Yii::$app->get($id);
+        if ($authManager instanceof DbManager) {
+            return $authManager;
+        }
+        throw new InvalidConfigException('class instanceof for : ' . DbManager::class);
+    }
 
-        return $name ? ArrayHelper::getValue($user->identity, $name) : $user->getIdentity();
+    /**
+     * getMenuClass
+     * @return Menu
+     * @throws InvalidConfigException
+     */
+    public static function getMenuClass()
+    {
+        /* @var Menu $class */
+        $class = static::getParam('menuClass', Menu::class);
+        if (class_exists($class)) {
+            return $class;
+        } else {
+            throw new InvalidConfigException('class instanceof for : ' . ActiveRecord::class);
+        }
     }
 }

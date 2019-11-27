@@ -24,7 +24,7 @@ class m180817_053731_menu extends Migration
 
         $this->createTable($this->table, [
             'id' => $this->primaryKey()->notNull()->comment('主键'),
-            'parent' => $this->integer(11)->notNull()->defaultValue(0)->comment('父类'),
+            'parent_id' => $this->integer(11)->notNull()->defaultValue(0)->comment('父类'),
             'name' => $this->string(64)->notNull()->comment('栏目'),
             'route' => $this->string(64)->notNull()->defaultValue('')->comment('地址'),
             'icon' => $this->string(32)->notNull()->defaultValue('icon-desktop')->comment('图标'),
@@ -39,18 +39,18 @@ class m180817_053731_menu extends Migration
             [
                 'name' => '权限管理',
                 'child' => [
-                    ['name' => '管理员列表', 'route' => 'admin/index',],
-                    ['name' => '创建管理员', 'route' => 'admin/create'],
-                    ['name' => '菜单列表', 'route' => 'menu/index'],
-                    ['name' => '创建菜单', 'route' => 'menu/create'],
-                    ['name' => '角色列表', 'route' => 'role/index', 'icon' => 'menu-icon fa fa-graduation-cap'],
-                    ['name' => '创建角色', 'route' => 'role/create'],
-                    ['name' => '权限列表', 'route' => 'item/index', 'icon' => 'menu-icon fa fa-fire'],
-                    ['name' => '创建权限', 'route' => 'item/create'],
-                    ['name' => '规则列表', 'route' => 'rule/index', 'icon' => 'menu-icon fa shield'],
+                    ['name' => '管理员列表', 'route' => 'admins/index',],
+                    ['name' => '创建管理员', 'route' => 'admins/create'],
+                    ['name' => '菜单列表', 'route' => 'menus/index'],
+                    ['name' => '创建菜单', 'route' => 'menus/create'],
+                    ['name' => '角色列表', 'route' => 'roles/index'],
+                    ['name' => '创建角色', 'route' => 'roles/create'],
+                    ['name' => '权限列表', 'route' => 'items/index'],
+                    ['name' => '创建权限', 'route' => 'items/create'],
+                    ['name' => '规则列表', 'route' => 'rules/index'],
                 ],
             ],
-        ], ParamsHelper::adminRulePrefix());
+        ], ParamsHelper::module());
     }
 
     protected function initData($menu, $prefixRoute, $parent = 0)

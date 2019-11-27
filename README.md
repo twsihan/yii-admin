@@ -7,18 +7,16 @@ php yii migrate --migrationPath=@twsihan/admin/migrations
 
 ~~~
 'modules' => [
-    'admin' => [
-        'class' => 'twsihan\admin\Module',
-        'layout' => '@twsihan/admin/views/layouts/main',
-        'user' => 'user',
-        /*
-        'controllerMap'   => [ // 重写方法
-            'admin' => [
-                'class' => 'app\controllers\AdminController',
-                'viewPath' => '@app/views/admin',
-            ],
-        ],
-        */
+    'admin' => 'twsihan\admin\Module',
+],
+'components' => [
+    'authManager' => [
+        'class' => 'twsihan\admin\components\rbac\DbManager',
+    ],
+    'user' => [
+        'class' => 'yii\web\User',
+        'enableAutoLogin' => false,
+        'loginUrl' => null,
     ],
 ],
 'as access' => [
@@ -27,19 +25,6 @@ php yii migrate --migrationPath=@twsihan/admin/migrations
         'admin/admin/profile',
         'admin/default/*',
         'site/*',
-    ],
-],
-'components' => [
-    'authManager' => [
-        'class' => 'twsihan\admin\components\rbac\DbManager',
-    ],
-    'user' => [
-        'class' => 'yii\web\User',
-        'identityClass' => 'twsihan\admin\models\mysql\Admin',
-        'enableAutoLogin' => true,
-        'loginUrl' => ['/admin/default/login'],
-        'idParam' => '_adminId',
-        'identityCookie' => ['name' => '_admin', 'httpOnly' => true],
     ],
 ],
 ~~~

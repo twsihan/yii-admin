@@ -3,10 +3,8 @@
 namespace twsihan\admin\controllers;
 
 use twsihan\admin\components\rest\ActiveController;
+use twsihan\admin\models\form\RuleIndex;
 use Yii;
-use yii\base\Model;
-use yii\data\ActiveDataProvider;
-use yii\db\Query;
 
 /**
  * Class RoleController
@@ -16,18 +14,18 @@ use yii\db\Query;
  */
 class RuleController extends ActiveController
 {
+    public $indexModel = RuleIndex::class;
 
 
-    /**
-     * @return array|string
-     */
     public function actionIndex()
     {
-        $searchModel = new Model();
-        $searchModel->load(Yii::$app->request->get(), '');
-
-        $auth = Yii::$app->getAuthManager();
-        $query = (new Query())->from("{$auth->ruleTable}");
-        return new ActiveDataProvider(['query' => $query]);
+        /* @var RuleIndex $model */
+        $model = Yii::createObject($this->indexModel);
+        $model->load(Yii::$app->request->get(), '');
+        $this->serializer = [
+            'class' => $this->serializer,
+            'collectionEnvelope' => 'items',
+        ];
+        return $model->handle();
     }
 }
