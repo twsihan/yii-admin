@@ -94,8 +94,6 @@ class RoleController extends ActiveController
             ->orderBy(['created_at' => SORT_DESC])
             ->all();
 
-        $list = ArrayHelper::map($result, 'name', 'description');
-
-        return $list;
+        return ArrayHelper::map($result, 'name', 'description');
     }
 }

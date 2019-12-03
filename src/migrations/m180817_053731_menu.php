@@ -39,15 +39,15 @@ class m180817_053731_menu extends Migration
             [
                 'name' => '权限管理',
                 'child' => [
-                    ['name' => '管理员列表', 'route' => 'admins/index',],
-                    ['name' => '创建管理员', 'route' => 'admins/create'],
-                    ['name' => '菜单列表', 'route' => 'menus/index'],
-                    ['name' => '创建菜单', 'route' => 'menus/create'],
-                    ['name' => '角色列表', 'route' => 'roles/index'],
-                    ['name' => '创建角色', 'route' => 'roles/create'],
-                    ['name' => '权限列表', 'route' => 'items/index'],
-                    ['name' => '创建权限', 'route' => 'items/create'],
-                    ['name' => '规则列表', 'route' => 'rules/index'],
+                    ['name' => '管理员列表', 'route' => 'admin/index',],
+                    ['name' => '创建管理员', 'route' => 'admin/create'],
+                    ['name' => '菜单列表', 'route' => 'menu/index'],
+                    ['name' => '创建菜单', 'route' => 'menu/create'],
+                    ['name' => '角色列表', 'route' => 'role/index'],
+                    ['name' => '创建角色', 'route' => 'role/create'],
+                    ['name' => '权限列表', 'route' => 'item/index'],
+                    ['name' => '创建权限', 'route' => 'item/create'],
+                    ['name' => '规则列表', 'route' => 'rule/index'],
                 ],
             ],
         ], ParamsHelper::module());
@@ -60,7 +60,6 @@ class m180817_053731_menu extends Migration
                 $child = null;
                 if (isset($item['child'])) {
                     $child = $item['child'];
-
                     unset($item['child']);
                 }
 
@@ -68,7 +67,6 @@ class m180817_053731_menu extends Migration
                 $item['route'] = isset($item['route']) ? ($prefixRoute . '/' . $item['route']) : '';
 
                 $this->insert($this->table, $item);
-
                 if ($child !== null) {
                     $this->initData($child, $prefixRoute, $this->db->getLastInsertID());
                 }

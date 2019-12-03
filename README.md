@@ -5,6 +5,8 @@ php yii migrate --migrationPath=@yii/rbac/migrations
 php yii migrate --migrationPath=@twsihan/admin/migrations
 ~~~
 
+Config Set
+==========
 ~~~
 'modules' => [
     'admin' => 'twsihan\admin\Module',
@@ -27,4 +29,65 @@ php yii migrate --migrationPath=@twsihan/admin/migrations
         'site/*',
     ],
 ],
+~~~
+
+URl Route
+=========
+~~~
+<?php
+
+$pluralize = true;
+
+return [
+    [
+        'class' => 'yii\rest\UrlRule',
+        'pluralize' => $pluralize,
+        'controller' => ['admin/admin'],
+        'extraPatterns' => [
+            'PUT,PATCH profile' => 'profile',
+            'PUT,PATCH password' => 'password',
+        ],
+    ],
+    [
+        'class' => 'yii\rest\UrlRule',
+        'pluralize' => $pluralize,
+        'controller' => ['admin/default'],
+        'extraPatterns' => [
+            'POST login' => 'login',
+            'POST logout' => 'logout',
+        ],
+    ],
+    [
+        'class' => 'yii\rest\UrlRule',
+        'pluralize' => $pluralize,
+        'controller' => ['admin/item'],
+        'extraPatterns' => [
+            'GET parent' => 'parent',
+            'DELETE' => 'delete',
+            'PUT,PATCH' => 'update',
+            'GET,HEAD view' => 'view',
+        ],
+    ],
+    [
+        'class' => 'yii\rest\UrlRule',
+        'pluralize' => $pluralize,
+        'controller' => ['admin/menu'],
+    ],
+    [
+        'class' => 'yii\rest\UrlRule',
+        'pluralize' => $pluralize,
+        'controller' => ['admin/role'],
+        'extraPatterns' => [
+            'GET auth' => 'auth',
+            'DELETE' => 'delete',
+            'PUT,PATCH' => 'update',
+            'GET,HEAD view' => 'view',
+        ],
+    ],
+    [
+        'class' => 'yii\rest\UrlRule',
+        'pluralize' => $pluralize,
+        'controller' => ['admin/rule'],
+    ],
+];
 ~~~
