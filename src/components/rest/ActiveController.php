@@ -21,7 +21,7 @@ class ActiveController extends \yii\rest\ActiveController
         HttpBasicAuth::class,
         HttpBearerAuth::class,
         HttpHeaderAuth::class,
-        QueryParamAuth::class,
+        ['class' => QueryParamAuth::class, 'tokenParam' => 'access_token'],
     ];
     public $access = AccessControl::class;
 
